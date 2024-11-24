@@ -17,6 +17,7 @@ CONF_SENSITIVITY = "sensitivity"
 CONF_DURATION = "duration"
 CONF_ON_SINGLE_TAP = "on_single_tap"
 CONF_ON_DOUBLE_TAP = "on_double_tap"
+TAP_DIRECTIONS = ["up", "down", "left", "right"]
 
 CONFIG_SCHEMA = (
     binary_sensor.binary_sensor_schema(MPU6050TapSensor)
@@ -66,55 +67,32 @@ async def to_code(config):
     await cg.register_component(var, config)
     await binary_sensor.register_binary_sensor(var, config)
 
-    # Set up basic configuration
     cg.add(var.set_interrupt_pin(config[CONF_INTERRUPT_PIN]))
     cg.add(var.set_sensitivity(config[CONF_SENSITIVITY]))
     cg.add(var.set_duration(config[CONF_DURATION]))
 
-    # Handle on_single_tap actions explicitly
+    # Handle on_single_tap actions
     if CONF_ON_SINGLE_TAP in config:
         single_tap = config[CONF_ON_SINGLE_TAP]
+        for direction in TAP_DIRECTIONS:
+            if direction in single_tap:
+                register_trigger = getattr(
+                    var, f"register_single_tap_{direction}_callback"
+                )
+                for action in single_tap[direction]:
+                    trigger = cg.new_Pvariable(action[CONF_ID])
+                    await automation.build_automation(trigger, [], action)
+                    cg.add(register_trigger(trigger))
 
-        if "up" in single_tap:
-            trigger = cg.new_Pvariable(single_tap["up_id"])
-            await automation.build_automation(trigger, [], single_tap["up"])
-            cg.add(var.register_single_tap_up_callback(trigger))
-
-        if "down" in single_tap:
-            trigger = cg.new_Pvariable(single_tap["down_id"])
-            await automation.build_automation(trigger, [], single_tap["down"])
-            cg.add(var.register_single_tap_down_callback(trigger))
-
-        if "left" in single_tap:
-            trigger = cg.new_Pvariable(single_tap["left_id"])
-            await automation.build_automation(trigger, [], single_tap["left"])
-            cg.add(var.register_single_tap_left_callback(trigger))
-
-        if "right" in single_tap:
-            trigger = cg.new_Pvariable(single_tap["right_id"])
-            await automation.build_automation(trigger, [], single_tap["right"])
-            cg.add(var.register_single_tap_right_callback(trigger))
-
-    # Handle on_double_tap actions explicitly
+    # Handle on_double_tap actions
     if CONF_ON_DOUBLE_TAP in config:
         double_tap = config[CONF_ON_DOUBLE_TAP]
-
-        if "up" in double_tap:
-            trigger = cg.new_Pvariable(double_tap["up_double_id"])
-            await automation.build_automation(trigger, [], double_tap["up"])
-            cg.add(var.register_double_tap_up_callback(trigger))
-
-        if "down" in double_tap:
-            trigger = cg.new_Pvariable(double_tap["down_double_id"])
-            await automation.build_automation(trigger, [], double_tap["down"])
-            cg.add(var.register_double_tap_down_callback(trigger))
-
-        if "left" in double_tap:
-            trigger = cg.new_Pvariable(double_tap["left_double_id"])
-            await automation.build_automation(trigger, [], double_tap["left"])
-            cg.add(var.register_double_tap_left_callback(trigger))
-
-        if "right" in double_tap:
-            trigger = cg.new_Pvariable(double_tap["right_double_id"])
-            await automation.build_automation(trigger, [], double_tap["right"])
-            cg.add(var.register_double_tap_right_callback(trigger))
+        for direction in TAP_DIRECTIONS:
+            if direction in double_tap:
+                register_trigger = getattr(
+                    var, f"register_double_tap_{direction}_callback"
+                )
+                for action in double_tap[direction]:
+                    trigger = cg.new_Pvariable(action[CONF_ID])
+                    await automation.build_automation(trigger, [], action)
+                    cg.add(register_trigger(trigger))
