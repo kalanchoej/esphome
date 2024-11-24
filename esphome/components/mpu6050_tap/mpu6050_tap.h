@@ -18,6 +18,15 @@ struct TapEvent {
   int16_t accel_z;
 };
 
+class DirectionTrigger : public Trigger<> {
+ public:
+  explicit DirectionTrigger(TapDirection direction) : direction_(direction) {}
+  TapDirection direction() const { return direction_; }
+
+ protected:
+  TapDirection direction_;
+};
+
 class MPU6050TapSensor : public binary_sensor::BinarySensor, public Component {
  public:
   void set_interrupt_pin(int pin) { this->interrupt_pin_ = pin; }
@@ -25,16 +34,29 @@ class MPU6050TapSensor : public binary_sensor::BinarySensor, public Component {
   void set_duration(uint8_t duration) { this->tap_duration_ = duration; }
   void set_double_tap_window(uint32_t window_ms) { this->double_tap_window_ms_ = window_ms; }
 
-  // Trigger getters
-  Trigger<> *get_single_tap_up_trigger() { return &this->single_tap_up_trigger_; }
-  Trigger<> *get_single_tap_down_trigger() { return &this->single_tap_down_trigger_; }
-  Trigger<> *get_single_tap_left_trigger() { return &this->single_tap_left_trigger_; }
-  Trigger<> *get_single_tap_right_trigger() { return &this->single_tap_right_trigger_; }
+  Trigger<> *get_single_tap_trigger(const std::string &direction) {
+    if (direction == "up")
+      return &this->single_tap_up_trigger_;
+    if (direction == "down")
+      return &this->single_tap_down_trigger_;
+    if (direction == "left")
+      return &this->single_tap_left_trigger_;
+    if (direction == "right")
+      return &this->single_tap_right_trigger_;
+    return nullptr;
+  }
 
-  Trigger<> *get_double_tap_up_trigger() { return &this->double_tap_up_trigger_; }
-  Trigger<> *get_double_tap_down_trigger() { return &this->double_tap_down_trigger_; }
-  Trigger<> *get_double_tap_left_trigger() { return &this->double_tap_left_trigger_; }
-  Trigger<> *get_double_tap_right_trigger() { return &this->double_tap_right_trigger_; }
+  Trigger<> *get_double_tap_trigger(const std::string &direction) {
+    if (direction == "up")
+      return &this->double_tap_up_trigger_;
+    if (direction == "down")
+      return &this->double_tap_down_trigger_;
+    if (direction == "left")
+      return &this->double_tap_left_trigger_;
+    if (direction == "right")
+      return &this->double_tap_right_trigger_;
+    return nullptr;
+  }
 
   void setup() override;
   void loop() override;
@@ -63,16 +85,16 @@ class MPU6050TapSensor : public binary_sensor::BinarySensor, public Component {
   TapEvent last_tap_;
   bool waiting_for_double_tap_{false};
 
-  // Replace CallbackManager with Triggers
-  Trigger<> single_tap_up_trigger_{};
-  Trigger<> single_tap_down_trigger_{};
-  Trigger<> single_tap_left_trigger_{};
-  Trigger<> single_tap_right_trigger_{};
+  // Direction triggers
+  Trigger<> single_tap_up_trigger_;
+  Trigger<> single_tap_down_trigger_;
+  Trigger<> single_tap_left_trigger_;
+  Trigger<> single_tap_right_trigger_;
 
-  Trigger<> double_tap_up_trigger_{};
-  Trigger<> double_tap_down_trigger_{};
-  Trigger<> double_tap_left_trigger_{};
-  Trigger<> double_tap_right_trigger_{};
+  Trigger<> double_tap_up_trigger_;
+  Trigger<> double_tap_down_trigger_;
+  Trigger<> double_tap_left_trigger_;
+  Trigger<> double_tap_right_trigger_;
 };
 
 }  // namespace mpu6050_tap
