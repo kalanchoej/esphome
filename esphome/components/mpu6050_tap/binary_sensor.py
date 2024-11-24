@@ -79,10 +79,9 @@ async def to_code(config):
                 register_trigger = getattr(
                     var, f"register_single_tap_{direction}_callback"
                 )
-                for action in single_tap[direction]:
-                    trigger = cg.new_Pvariable(action[CONF_ID])
-                    await automation.build_automation(trigger, [], action)
-                    cg.add(register_trigger(trigger))
+                await automation.build_automation(
+                    register_trigger, [], single_tap[direction]
+                )
 
     # Handle on_double_tap actions
     if CONF_ON_DOUBLE_TAP in config:
@@ -92,7 +91,6 @@ async def to_code(config):
                 register_trigger = getattr(
                     var, f"register_double_tap_{direction}_callback"
                 )
-                for action in double_tap[direction]:
-                    trigger = cg.new_Pvariable(action[CONF_ID])
-                    await automation.build_automation(trigger, [], action)
-                    cg.add(register_trigger(trigger))
+                await automation.build_automation(
+                    register_trigger, [], double_tap[direction]
+                )
