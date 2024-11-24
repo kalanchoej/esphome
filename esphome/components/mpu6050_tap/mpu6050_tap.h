@@ -27,29 +27,20 @@ class MPU6050TapSensor : public binary_sensor::BinarySensor, public Component {
   void set_sensitivity(uint8_t sensitivity) { this->sensitivity_ = sensitivity; }
   void set_duration(uint8_t duration) { this->duration_ = duration; }
 
-  // Methods to get triggers based on tap direction
-  Trigger<> *get_single_tap_trigger(const std::string &direction) {
-    if (direction == "up")
-      return &this->single_tap_up_trigger_;
-    if (direction == "down")
-      return &this->single_tap_down_trigger_;
-    if (direction == "left")
-      return &this->single_tap_left_trigger_;
-    if (direction == "right")
-      return &this->single_tap_right_trigger_;
-    return nullptr;
+  // Callback registration methods for single taps
+  void register_single_tap_up_callback(Trigger<> *callback) { this->single_tap_up_trigger_.add_callback(callback); }
+  void register_single_tap_down_callback(Trigger<> *callback) { this->single_tap_down_trigger_.add_callback(callback); }
+  void register_single_tap_left_callback(Trigger<> *callback) { this->single_tap_left_trigger_.add_callback(callback); }
+  void register_single_tap_right_callback(Trigger<> *callback) {
+    this->single_tap_right_trigger_.add_callback(callback);
   }
 
-  Trigger<> *get_double_tap_trigger(const std::string &direction) {
-    if (direction == "up")
-      return &this->double_tap_up_trigger_;
-    if (direction == "down")
-      return &this->double_tap_down_trigger_;
-    if (direction == "left")
-      return &this->double_tap_left_trigger_;
-    if (direction == "right")
-      return &this->double_tap_right_trigger_;
-    return nullptr;
+  // Callback registration methods for double taps
+  void register_double_tap_up_callback(Trigger<> *callback) { this->double_tap_up_trigger_.add_callback(callback); }
+  void register_double_tap_down_callback(Trigger<> *callback) { this->double_tap_down_trigger_.add_callback(callback); }
+  void register_double_tap_left_callback(Trigger<> *callback) { this->double_tap_left_trigger_.add_callback(callback); }
+  void register_double_tap_right_callback(Trigger<> *callback) {
+    this->double_tap_right_trigger_.add_callback(callback);
   }
 
   // Overridden methods from Component
@@ -77,7 +68,7 @@ class MPU6050TapSensor : public binary_sensor::BinarySensor, public Component {
   // Variables for double tap detection
   uint32_t last_tap_time_ = 0;
   bool awaiting_double_tap_ = false;
-  TapDirection last_tap_direction_ = TAP_UNKNOWN;  // <-- Added Declaration
+  TapDirection last_tap_direction_ = TAP_UNKNOWN;
 
   // Direction triggers for single taps
   DirectionTrigger single_tap_up_trigger_{};

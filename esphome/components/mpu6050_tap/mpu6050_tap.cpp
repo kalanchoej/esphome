@@ -46,7 +46,7 @@ void MPU6050TapSensor::configure_mpu6050_() {
   delay(10);
 
   // Configure ACCEL_CONFIG2 for low power and DLPF (0x1D register)
-  // Example: DLPF_CFG = 2 (92 Hz), enables motion detection
+  // Example: DLPF_CFG = 2 (92 Hz)
   this->write_register(0x1D, 0x02);
   delay(10);
 
@@ -74,7 +74,6 @@ void MPU6050TapSensor::configure_mpu6050_() {
 void MPU6050TapSensor::on_tap_detected_() {
   // ISR-safe operation: set flag
   this->tap_detected_ = true;
-  // Avoid logging or I2C operations here
 }
 
 void MPU6050TapSensor::loop() {
@@ -114,7 +113,7 @@ void MPU6050TapSensor::loop() {
               awaiting_double_tap_ = false;
             } else {
               // Previous tap is a single tap
-              ESP_LOGD(TAG, "Single tap detected: %d", dir);
+              ESP_LOGD(TAG, "Single tap detected: %d", last_tap_direction_);
               execute_callbacks_(false, last_tap_direction_);
               // Register current tap as the first tap
               last_tap_time_ = current_time;
