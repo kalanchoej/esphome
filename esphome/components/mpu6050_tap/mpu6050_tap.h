@@ -18,7 +18,6 @@ class MPU6050TapSensor : public binary_sensor::BinarySensor, public Component {
   void dump_config() override;
   void on_tap_detected_();  // Called by ISR
  protected:
-  
   void write_register(uint8_t reg, uint8_t value);
   uint8_t read_register(uint8_t reg);
 
