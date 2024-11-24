@@ -67,30 +67,27 @@ async def to_code(config):
     await cg.register_component(var, config)
     await binary_sensor.register_binary_sensor(var, config)
 
+    # Set configuration parameters
     cg.add(var.set_interrupt_pin(config[CONF_INTERRUPT_PIN]))
     cg.add(var.set_sensitivity(config[CONF_SENSITIVITY]))
     cg.add(var.set_duration(config[CONF_DURATION]))
 
-    # Handle on_single_tap actions
+    # Handle single tap automations
     if CONF_ON_SINGLE_TAP in config:
         single_tap = config[CONF_ON_SINGLE_TAP]
         for direction in TAP_DIRECTIONS:
             if direction in single_tap:
-                register_trigger = getattr(
-                    var, f"register_single_tap_{direction}_callback"
+                trigger = await automation.build_automation(
+                    var.get_single_tap_trigger(direction), [], single_tap[direction]
                 )
-                await automation.build_automation(
-                    register_trigger, [], single_tap[direction]
-                )
+                cg.add(trigger)
 
-    # Handle on_double_tap actions
+    # Handle double tap automations
     if CONF_ON_DOUBLE_TAP in config:
         double_tap = config[CONF_ON_DOUBLE_TAP]
         for direction in TAP_DIRECTIONS:
             if direction in double_tap:
-                register_trigger = getattr(
-                    var, f"register_double_tap_{direction}_callback"
+                trigger = await automation.build_automation(
+                    var.get_double_tap_trigger(direction), [], double_tap[direction]
                 )
-                await automation.build_automation(
-                    register_trigger, [], double_tap[direction]
-                )
+                cg.add(trigger)

@@ -21,6 +21,10 @@ class MPU6050TapSensor : public binary_sensor::BinarySensor, public Component {
   void set_sensitivity(uint8_t sensitivity) { this->sensitivity_ = sensitivity; }
   void set_duration(uint8_t duration) { this->duration_ = duration; }
 
+  // Getter methods for triggers
+  DirectionTrigger *get_single_tap_trigger(const std::string &direction);
+  DirectionTrigger *get_double_tap_trigger(const std::string &direction);
+
   // Callback registration methods for single taps
   void register_single_tap_up_callback(DirectionTrigger *callback) { this->single_tap_up_trigger_ = callback; }
   void register_single_tap_down_callback(DirectionTrigger *callback) { this->single_tap_down_trigger_ = callback; }
@@ -51,6 +55,10 @@ class MPU6050TapSensor : public binary_sensor::BinarySensor, public Component {
   int interrupt_pin_;
   uint8_t sensitivity_;
   uint8_t duration_;
+
+  // Trigger storage
+  DirectionTrigger single_tap_triggers_[4];
+  DirectionTrigger double_tap_triggers_[4];
 
   // Flag set by ISR
   volatile bool tap_detected_ = false;

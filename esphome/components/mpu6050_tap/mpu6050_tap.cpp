@@ -221,6 +221,30 @@ void MPU6050TapSensor::execute_callbacks_(bool is_double_tap, TapDirection dir) 
   }
 }
 
+DirectionTrigger *MPU6050TapSensor::get_single_tap_trigger(const std::string &direction) {
+  if (direction == "up")
+    return &single_tap_triggers_[TAP_UP];
+  if (direction == "down")
+    return &single_tap_triggers_[TAP_DOWN];
+  if (direction == "left")
+    return &single_tap_triggers_[TAP_LEFT];
+  if (direction == "right")
+    return &single_tap_triggers_[TAP_RIGHT];
+  return nullptr;
+}
+
+DirectionTrigger *MPU6050TapSensor::get_double_tap_trigger(const std::string &direction) {
+  if (direction == "up")
+    return &double_tap_triggers_[TAP_UP];
+  if (direction == "down")
+    return &double_tap_triggers_[TAP_DOWN];
+  if (direction == "left")
+    return &double_tap_triggers_[TAP_LEFT];
+  if (direction == "right")
+    return &double_tap_triggers_[TAP_RIGHT];
+  return nullptr;
+}
+
 void MPU6050TapSensor::write_register(uint8_t reg, uint8_t value) {
   Wire.beginTransmission(0x68);
   Wire.write(reg);
