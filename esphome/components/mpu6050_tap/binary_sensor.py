@@ -2,7 +2,12 @@ from esphome import automation
 import esphome.codegen as cg
 from esphome.components import binary_sensor
 import esphome.config_validation as cv
-from esphome.const import CONF_INTERRUPT_PIN, CONF_THEN, DEVICE_CLASS_MOTION
+from esphome.const import (
+    CONF_AUTOMATION_ID,
+    CONF_INTERRUPT_PIN,
+    CONF_THEN,
+    DEVICE_CLASS_MOTION,
+)
 
 DEPENDENCIES = ["i2c"]
 
@@ -36,10 +41,30 @@ def validate_direction_action(value):
 
 
 DIRECTION_ACTIONS = {
-    cv.Optional(CONF_UP): validate_direction_action,
-    cv.Optional(CONF_DOWN): validate_direction_action,
-    cv.Optional(CONF_LEFT): validate_direction_action,
-    cv.Optional(CONF_RIGHT): validate_direction_action,
+    cv.Optional(CONF_UP): cv.Schema(
+        {
+            cv.GenerateID(CONF_AUTOMATION_ID): cv.declare_id(automation.Automation),
+            cv.Optional(CONF_THEN): automation.validate_automation(),
+        }
+    ),
+    cv.Optional(CONF_DOWN): cv.Schema(
+        {
+            cv.GenerateID(CONF_AUTOMATION_ID): cv.declare_id(automation.Automation),
+            cv.Optional(CONF_THEN): automation.validate_automation(),
+        }
+    ),
+    cv.Optional(CONF_LEFT): cv.Schema(
+        {
+            cv.GenerateID(CONF_AUTOMATION_ID): cv.declare_id(automation.Automation),
+            cv.Optional(CONF_THEN): automation.validate_automation(),
+        }
+    ),
+    cv.Optional(CONF_RIGHT): cv.Schema(
+        {
+            cv.GenerateID(CONF_AUTOMATION_ID): cv.declare_id(automation.Automation),
+            cv.Optional(CONF_THEN): automation.validate_automation(),
+        }
+    ),
 }
 
 # Main configuration schema
@@ -75,7 +100,10 @@ async def setup_direction_triggers(config, key, get_trigger):
     for direction, actions in conf.items():
         trigger = get_trigger(direction)
         if trigger is not None:
-            await automation.build_automation(trigger, [], actions)
+            automation_id = actions[CONF_AUTOMATION_ID]  # Retrieve the ID
+            await automation.build_automation(
+                trigger, automation_id, actions[CONF_THEN]
+            )
 
 
 async def to_code(config):
