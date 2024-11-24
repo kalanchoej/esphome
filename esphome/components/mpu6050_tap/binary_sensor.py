@@ -34,18 +34,34 @@ CONFIG_SCHEMA = (
             ),
             cv.Optional(CONF_ON_SINGLE_TAP): cv.Schema(
                 {
-                    cv.Optional("up"): automation.validate_automation(),
-                    cv.Optional("down"): automation.validate_automation(),
-                    cv.Optional("left"): automation.validate_automation(),
-                    cv.Optional("right"): automation.validate_automation(),
+                    cv.Optional("up"): automation.validate_automation(
+                        cv.declare_id(DirectionTrigger)
+                    ),
+                    cv.Optional("down"): automation.validate_automation(
+                        cv.declare_id(DirectionTrigger)
+                    ),
+                    cv.Optional("left"): automation.validate_automation(
+                        cv.declare_id(DirectionTrigger)
+                    ),
+                    cv.Optional("right"): automation.validate_automation(
+                        cv.declare_id(DirectionTrigger)
+                    ),
                 }
             ),
             cv.Optional(CONF_ON_DOUBLE_TAP): cv.Schema(
                 {
-                    cv.Optional("up"): automation.validate_automation(),
-                    cv.Optional("down"): automation.validate_automation(),
-                    cv.Optional("left"): automation.validate_automation(),
-                    cv.Optional("right"): automation.validate_automation(),
+                    cv.Optional("up"): automation.validate_automation(
+                        cv.declare_id(DirectionTrigger)
+                    ),
+                    cv.Optional("down"): automation.validate_automation(
+                        cv.declare_id(DirectionTrigger)
+                    ),
+                    cv.Optional("left"): automation.validate_automation(
+                        cv.declare_id(DirectionTrigger)
+                    ),
+                    cv.Optional("right"): automation.validate_automation(
+                        cv.declare_id(DirectionTrigger)
+                    ),
                 }
             ),
         }
@@ -70,22 +86,22 @@ async def to_code(config):
         single_tap = config[CONF_ON_SINGLE_TAP]
 
         if "up" in single_tap:
-            trigger = cg.new_Pvariable(cv.declare_id(DirectionTrigger))
+            trigger = cg.new_Pvariable(single_tap["up"][CONF_ID])
             await automation.build_automation(trigger, [], single_tap["up"])
             cg.add(var.register_single_tap_up_callback(trigger))
 
         if "down" in single_tap:
-            trigger = cg.new_Pvariable(cv.declare_id(DirectionTrigger))
+            trigger = cg.new_Pvariable(single_tap["down"][CONF_ID])
             await automation.build_automation(trigger, [], single_tap["down"])
             cg.add(var.register_single_tap_down_callback(trigger))
 
         if "left" in single_tap:
-            trigger = cg.new_Pvariable(cv.declare_id(DirectionTrigger))
+            trigger = cg.new_Pvariable(single_tap["left"][CONF_ID])
             await automation.build_automation(trigger, [], single_tap["left"])
             cg.add(var.register_single_tap_left_callback(trigger))
 
         if "right" in single_tap:
-            trigger = cg.new_Pvariable(cv.declare_id(DirectionTrigger))
+            trigger = cg.new_Pvariable(single_tap["right"][CONF_ID])
             await automation.build_automation(trigger, [], single_tap["right"])
             cg.add(var.register_single_tap_right_callback(trigger))
 
@@ -94,21 +110,21 @@ async def to_code(config):
         double_tap = config[CONF_ON_DOUBLE_TAP]
 
         if "up" in double_tap:
-            trigger = cg.new_Pvariable(cv.declare_id(DirectionTrigger))
+            trigger = cg.new_Pvariable(double_tap["up"][CONF_ID])
             await automation.build_automation(trigger, [], double_tap["up"])
             cg.add(var.register_double_tap_up_callback(trigger))
 
         if "down" in double_tap:
-            trigger = cg.new_Pvariable(cv.declare_id(DirectionTrigger))
+            trigger = cg.new_Pvariable(double_tap["down"][CONF_ID])
             await automation.build_automation(trigger, [], double_tap["down"])
             cg.add(var.register_double_tap_down_callback(trigger))
 
         if "left" in double_tap:
-            trigger = cg.new_Pvariable(cv.declare_id(DirectionTrigger))
+            trigger = cg.new_Pvariable(double_tap["left"][CONF_ID])
             await automation.build_automation(trigger, [], double_tap["left"])
             cg.add(var.register_double_tap_left_callback(trigger))
 
         if "right" in double_tap:
-            trigger = cg.new_Pvariable(cv.declare_id(DirectionTrigger))
+            trigger = cg.new_Pvariable(double_tap["right"][CONF_ID])
             await automation.build_automation(trigger, [], double_tap["right"])
             cg.add(var.register_double_tap_right_callback(trigger))
