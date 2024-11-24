@@ -30,17 +30,21 @@ CONFIG_SCHEMA = (
             cv.Optional(CONF_DURATION, default=0x01): cv.hex_int_range(
                 min=0x00, max=0xFF
             ),
-            cv.Optional(CONF_ON_SINGLE_TAP): cv.Schema(
-                {
-                    direction: cv.ensure_list(automation.validate_automation())
-                    for direction in TAP_DIRECTIONS
-                }
+            cv.Optional(CONF_ON_SINGLE_TAP): cv.Optional(
+                cv.Schema(
+                    {
+                        direction: cv.ensure_list(automation.validate_automation())
+                        for direction in TAP_DIRECTIONS
+                    }
+                )
             ),
-            cv.Optional(CONF_ON_DOUBLE_TAP): cv.Schema(
-                {
-                    direction: cv.ensure_list(automation.validate_automation())
-                    for direction in TAP_DIRECTIONS
-                }
+            cv.Optional(CONF_ON_DOUBLE_TAP): cv.Optional(
+                cv.Schema(
+                    {
+                        direction: cv.ensure_list(automation.validate_automation())
+                        for direction in TAP_DIRECTIONS
+                    }
+                )
             ),
         }
     )
