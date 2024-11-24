@@ -67,27 +67,19 @@ async def to_code(config):
 
         if "up" in single_tap:
             await automation.build_automation(
-                var.register_single_tap_up_callback,
-                single_tap["up"],
-                config=single_tap["up"],
+                var.register_single_tap_up_callback, [], single_tap["up"]
             )
         if "down" in single_tap:
             await automation.build_automation(
-                var.register_single_tap_down_callback,
-                single_tap["down"],
-                config=single_tap["down"],
+                var.register_single_tap_down_callback, [], single_tap["down"]
             )
         if "left" in single_tap:
             await automation.build_automation(
-                var.register_single_tap_left_callback,
-                single_tap["left"],
-                config=single_tap["left"],
+                var.register_single_tap_left_callback, [], single_tap["left"]
             )
         if "right" in single_tap:
             await automation.build_automation(
-                var.register_single_tap_right_callback,
-                single_tap["right"],
-                config=single_tap["right"],
+                var.register_single_tap_right_callback, [], single_tap["right"]
             )
 
     # Handle on_double_tap actions explicitly
@@ -96,25 +88,17 @@ async def to_code(config):
 
         if "up" in double_tap:
             await automation.build_automation(
-                var.register_double_tap_up_callback,
-                double_tap["up"],
-                config=double_tap["up"],
+                var.register_double_tap_up_callback, [], double_tap["up"]
             )
         if "down" in double_tap:
             await automation.build_automation(
-                var.register_double_tap_down_callback,
-                double_tap["down"],
-                config=double_tap["down"],
+                var.register_double_tap_down_callback, [], double_tap["down"]
             )
         if "left" in double_tap:
             await automation.build_automation(
-                var.register_double_tap_left_callback,
-                double_tap["left"],
-                config=double_tap["left"],
+                var.register_double_tap_left_callback, [], double_tap["left"]
             )
         if "right" in double_tap:
             await automation.build_automation(
-                var.register_double_tap_right_callback,
-                double_tap["right"],
-                config=double_tap["right"],
+                var.register_double_tap_right_callback, [], double_tap["right"]
             )
