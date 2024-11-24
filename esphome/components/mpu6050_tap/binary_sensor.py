@@ -1,4 +1,4 @@
-from esphome import automation
+from esphome import automation  # Import the automation system to get the Trigger class
 import esphome.codegen as cg
 from esphome.components import binary_sensor, i2c
 import esphome.config_validation as cv
@@ -6,10 +6,14 @@ from esphome.const import CONF_ID, CONF_INTERRUPT_PIN
 
 DEPENDENCIES = ["i2c"]
 
+# Create a namespace for the mpu6050_tap component
 mpu6050_tap_ns = cg.esphome_ns.namespace("mpu6050_tap")
 MPU6050TapSensor = mpu6050_tap_ns.class_(
     "MPU6050TapSensor", binary_sensor.BinarySensor, cg.Component
 )
+DirectionTrigger = mpu6050_tap_ns.class_(
+    "DirectionTrigger", automation.Trigger
+)  # Import the Trigger class from automation
 
 CONF_SENSITIVITY = "sensitivity"
 CONF_DURATION = "duration"
@@ -66,22 +70,22 @@ async def to_code(config):
         single_tap = config[CONF_ON_SINGLE_TAP]
 
         if "up" in single_tap:
-            trigger = cg.new_Pvariable(config[CONF_ID])
+            trigger = cg.new_Pvariable(cv.declare_id(DirectionTrigger))
             await automation.build_automation(trigger, [], single_tap["up"])
             cg.add(var.register_single_tap_up_callback(trigger))
 
         if "down" in single_tap:
-            trigger = cg.new_Pvariable(config[CONF_ID])
+            trigger = cg.new_Pvariable(cv.declare_id(DirectionTrigger))
             await automation.build_automation(trigger, [], single_tap["down"])
             cg.add(var.register_single_tap_down_callback(trigger))
 
         if "left" in single_tap:
-            trigger = cg.new_Pvariable(config[CONF_ID])
+            trigger = cg.new_Pvariable(cv.declare_id(DirectionTrigger))
             await automation.build_automation(trigger, [], single_tap["left"])
             cg.add(var.register_single_tap_left_callback(trigger))
 
         if "right" in single_tap:
-            trigger = cg.new_Pvariable(config[CONF_ID])
+            trigger = cg.new_Pvariable(cv.declare_id(DirectionTrigger))
             await automation.build_automation(trigger, [], single_tap["right"])
             cg.add(var.register_single_tap_right_callback(trigger))
 
@@ -90,21 +94,21 @@ async def to_code(config):
         double_tap = config[CONF_ON_DOUBLE_TAP]
 
         if "up" in double_tap:
-            trigger = cg.new_Pvariable(config[CONF_ID])
+            trigger = cg.new_Pvariable(cv.declare_id(DirectionTrigger))
             await automation.build_automation(trigger, [], double_tap["up"])
             cg.add(var.register_double_tap_up_callback(trigger))
 
         if "down" in double_tap:
-            trigger = cg.new_Pvariable(config[CONF_ID])
+            trigger = cg.new_Pvariable(cv.declare_id(DirectionTrigger))
             await automation.build_automation(trigger, [], double_tap["down"])
             cg.add(var.register_double_tap_down_callback(trigger))
 
         if "left" in double_tap:
-            trigger = cg.new_Pvariable(config[CONF_ID])
+            trigger = cg.new_Pvariable(cv.declare_id(DirectionTrigger))
             await automation.build_automation(trigger, [], double_tap["left"])
             cg.add(var.register_double_tap_left_callback(trigger))
 
         if "right" in double_tap:
-            trigger = cg.new_Pvariable(config[CONF_ID])
+            trigger = cg.new_Pvariable(cv.declare_id(DirectionTrigger))
             await automation.build_automation(trigger, [], double_tap["right"])
             cg.add(var.register_double_tap_right_callback(trigger))
