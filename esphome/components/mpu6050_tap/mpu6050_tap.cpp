@@ -46,9 +46,17 @@ void MPU6050TapSensor::setup() {
 }
 
 void MPU6050TapSensor::on_tap_detected_() {
-  ESP_LOGD(TAG, "Tap detected!");
-  this->publish_state(true);
-  this->set_timeout(10, [this]() { this->publish_state(false); });  // Simple debounce
+  // ISR-safe operation: set flag
+  this->tap_detected_ = true;
+}
+
+void MPU6050TapSensor::loop() {
+  if (this->tap_detected_) {
+    this->tap_detected_ = false;  // Clear the flag
+    ESP_LOGD(TAG, "Tap detected!");
+    this->publish_state(true);
+    this->set_timeout(10, [this]() { this->publish_state(false); });  // Simple debounce
+  }
 }
 
 void MPU6050TapSensor::write_register(uint8_t reg, uint8_t value) {
