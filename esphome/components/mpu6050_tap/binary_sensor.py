@@ -2,12 +2,7 @@ from esphome import automation
 import esphome.codegen as cg
 from esphome.components import binary_sensor
 import esphome.config_validation as cv
-from esphome.const import (
-    CONF_INTERRUPT_PIN,
-    CONF_THEN,
-    CONF_TRIGGER_ID,
-    DEVICE_CLASS_MOTION,
-)
+from esphome.const import CONF_INTERRUPT_PIN, CONF_THEN, DEVICE_CLASS_MOTION
 
 DEPENDENCIES = ["i2c"]
 
@@ -26,21 +21,25 @@ MPU6050TapSensor = mpu6050_ns.class_(
     "MPU6050TapSensor", binary_sensor.BinarySensor, cg.Component
 )
 
-# Direction action schema for both single and double taps
+# Direction triggers
 DirectionTrigger = mpu6050_ns.class_("DirectionTrigger", automation.Trigger.template())
 
-DIRECTION_ACTION_SCHEMA = automation.maybe_simple_id(
-    {
-        cv.GenerateID(CONF_TRIGGER_ID): cv.declare_id(DirectionTrigger),
-        cv.Required(CONF_THEN): automation.validate_automation(),
-    }
-)
+
+def validate_direction_action(value):
+    if isinstance(value, dict):
+        return cv.Schema(
+            {
+                cv.Optional(CONF_THEN): automation.validate_automation(),
+            }
+        )(value)
+    return automation.validate_automation(value)
+
 
 DIRECTION_ACTIONS = {
-    cv.Optional(CONF_UP): DIRECTION_ACTION_SCHEMA,
-    cv.Optional(CONF_DOWN): DIRECTION_ACTION_SCHEMA,
-    cv.Optional(CONF_LEFT): DIRECTION_ACTION_SCHEMA,
-    cv.Optional(CONF_RIGHT): DIRECTION_ACTION_SCHEMA,
+    cv.Optional(CONF_UP): validate_direction_action,
+    cv.Optional(CONF_DOWN): validate_direction_action,
+    cv.Optional(CONF_LEFT): validate_direction_action,
+    cv.Optional(CONF_RIGHT): validate_direction_action,
 }
 
 # Main configuration schema
@@ -69,32 +68,14 @@ CONFIG_SCHEMA = (
 
 
 async def setup_direction_triggers(config, key, get_trigger):
-    if key in config:
-        conf = config[key]
-        if CONF_UP in conf:
-            await automation.build_automation(
-                get_trigger("up"),
-                [],
-                conf[CONF_UP],
-            )
-        if CONF_DOWN in conf:
-            await automation.build_automation(
-                get_trigger("down"),
-                [],
-                conf[CONF_DOWN],
-            )
-        if CONF_LEFT in conf:
-            await automation.build_automation(
-                get_trigger("left"),
-                [],
-                conf[CONF_LEFT],
-            )
-        if CONF_RIGHT in conf:
-            await automation.build_automation(
-                get_trigger("right"),
-                [],
-                conf[CONF_RIGHT],
-            )
+    if key not in config:
+        return
+
+    conf = config[key]
+    for direction, actions in conf.items():
+        trigger = get_trigger(direction)
+        if trigger is not None:
+            await automation.build_automation(trigger, [], actions)
 
 
 async def to_code(config):

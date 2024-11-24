@@ -18,14 +18,7 @@ struct TapEvent {
   int16_t accel_z;
 };
 
-class DirectionTrigger : public Trigger<> {
- public:
-  explicit DirectionTrigger(TapDirection direction) : direction_(direction) {}
-  TapDirection direction() const { return direction_; }
-
- protected:
-  TapDirection direction_;
-};
+class DirectionTrigger : public Trigger<> {};
 
 class MPU6050TapSensor : public binary_sensor::BinarySensor, public Component {
  public:
@@ -86,15 +79,15 @@ class MPU6050TapSensor : public binary_sensor::BinarySensor, public Component {
   bool waiting_for_double_tap_{false};
 
   // Direction triggers
-  Trigger<> single_tap_up_trigger_;
-  Trigger<> single_tap_down_trigger_;
-  Trigger<> single_tap_left_trigger_;
-  Trigger<> single_tap_right_trigger_;
+  DirectionTrigger single_tap_up_trigger_{};
+  DirectionTrigger single_tap_down_trigger_{};
+  DirectionTrigger single_tap_left_trigger_{};
+  DirectionTrigger single_tap_right_trigger_{};
 
-  Trigger<> double_tap_up_trigger_;
-  Trigger<> double_tap_down_trigger_;
-  Trigger<> double_tap_left_trigger_;
-  Trigger<> double_tap_right_trigger_;
+  DirectionTrigger double_tap_up_trigger_{};
+  DirectionTrigger double_tap_down_trigger_{};
+  DirectionTrigger double_tap_left_trigger_{};
+  DirectionTrigger double_tap_right_trigger_{};
 };
 
 }  // namespace mpu6050_tap
