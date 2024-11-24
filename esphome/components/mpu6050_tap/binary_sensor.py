@@ -1,16 +1,16 @@
+import voluptuous as vol
+
 from esphome import automation
 import esphome.codegen as cg
 from esphome.components import binary_sensor
 import esphome.config_validation as cv
-from esphome.const import (
-    CONF_AUTOMATION_ID,
-    CONF_INTERRUPT_PIN,
-    CONF_THEN,
-    DEVICE_CLASS_MOTION,
-)
+from esphome.const import CONF_THEN, DEVICE_CLASS_MOTION
 
+# Define dependencies
 DEPENDENCIES = ["i2c"]
 
+# Define custom configuration keys
+CONF_INTERRUPT_PIN = "interrupt_pin"
 CONF_SENSITIVITY = "sensitivity"
 CONF_DURATION = "duration"
 CONF_DOUBLE_TAP_WINDOW = "double_tap_window"
@@ -21,50 +21,23 @@ CONF_DOWN = "down"
 CONF_LEFT = "left"
 CONF_RIGHT = "right"
 
-mpu6050_ns = cg.esphome_ns.namespace("mpu6050_tap")
-MPU6050TapSensor = mpu6050_ns.class_(
+# Namespace
+mpu6050_tap_ns = cg.esphome_ns.namespace("mpu6050_tap")
+MPU6050TapSensor = mpu6050_tap_ns.class_(
     "MPU6050TapSensor", binary_sensor.BinarySensor, cg.Component
 )
 
 # Direction triggers
-DirectionTrigger = mpu6050_ns.class_("DirectionTrigger", automation.Trigger.template())
+DirectionTrigger = mpu6050_tap_ns.class_(
+    "DirectionTrigger", automation.Trigger.template()
+)
 
-
-def validate_direction_action(value):
-    if isinstance(value, dict):
-        return cv.Schema(
-            {
-                cv.Optional(CONF_THEN): automation.validate_automation(),
-            }
-        )(value)
-    return automation.validate_automation(value)
-
-
+# Validation schema for direction actions
 DIRECTION_ACTIONS = {
-    cv.Optional(CONF_UP): cv.Schema(
-        {
-            cv.GenerateID(CONF_AUTOMATION_ID): cv.declare_id(automation.Automation),
-            cv.Optional(CONF_THEN): automation.validate_automation(),
-        }
-    ),
-    cv.Optional(CONF_DOWN): cv.Schema(
-        {
-            cv.GenerateID(CONF_AUTOMATION_ID): cv.declare_id(automation.Automation),
-            cv.Optional(CONF_THEN): automation.validate_automation(),
-        }
-    ),
-    cv.Optional(CONF_LEFT): cv.Schema(
-        {
-            cv.GenerateID(CONF_AUTOMATION_ID): cv.declare_id(automation.Automation),
-            cv.Optional(CONF_THEN): automation.validate_automation(),
-        }
-    ),
-    cv.Optional(CONF_RIGHT): cv.Schema(
-        {
-            cv.GenerateID(CONF_AUTOMATION_ID): cv.declare_id(automation.Automation),
-            cv.Optional(CONF_THEN): automation.validate_automation(),
-        }
-    ),
+    cv.Optional(CONF_UP): automation.validate_automation(),
+    cv.Optional(CONF_DOWN): automation.validate_automation(),
+    cv.Optional(CONF_LEFT): automation.validate_automation(),
+    cv.Optional(CONF_RIGHT): automation.validate_automation(),
 }
 
 # Main configuration schema
@@ -74,36 +47,34 @@ CONFIG_SCHEMA = (
     )
     .extend(
         {
-            cv.Required(CONF_INTERRUPT_PIN): cv.int_,
-            cv.Optional(CONF_SENSITIVITY, default=0x40): cv.hex_int_range(
+            vol.Required(CONF_INTERRUPT_PIN): cv.int_,
+            vol.Optional(CONF_SENSITIVITY, default=0x40): cv.hex_int_range(
                 min=0x00, max=0xFF
             ),
-            cv.Optional(CONF_DURATION, default=0x01): cv.hex_int_range(
+            vol.Optional(CONF_DURATION, default=0x01): cv.hex_int_range(
                 min=0x00, max=0xFF
             ),
-            cv.Optional(
+            vol.Optional(
                 CONF_DOUBLE_TAP_WINDOW, default="200ms"
             ): cv.positive_time_period_milliseconds,
-            cv.Optional(CONF_ON_SINGLE_TAP): DIRECTION_ACTIONS,
-            cv.Optional(CONF_ON_DOUBLE_TAP): DIRECTION_ACTIONS,
+            vol.Optional(CONF_ON_SINGLE_TAP): cv.Schema(DIRECTION_ACTIONS),
+            vol.Optional(CONF_ON_DOUBLE_TAP): cv.Schema(DIRECTION_ACTIONS),
         }
     )
     .extend(cv.COMPONENT_SCHEMA)
 )
 
 
-async def setup_direction_triggers(config, key, get_trigger):
+async def setup_direction_triggers(config, key, get_trigger, var):
     if key not in config:
         return
 
     conf = config[key]
     for direction, actions in conf.items():
         trigger = get_trigger(direction)
-        if trigger is not None:
-            automation_id = actions[CONF_AUTOMATION_ID]  # Retrieve the ID
-            await automation.build_automation(
-                trigger, automation_id, actions[CONF_THEN]
-            )
+        if trigger is not None and CONF_THEN in actions:
+            # Pass trigger, actions, and config to build_automation
+            await automation.build_automation(trigger, actions[CONF_THEN], config)
 
 
 async def to_code(config):
@@ -112,23 +83,20 @@ async def to_code(config):
 
     # Configure basic settings
     cg.add(var.set_interrupt_pin(config[CONF_INTERRUPT_PIN]))
-    if CONF_SENSITIVITY in config:
-        cg.add(var.set_sensitivity(config[CONF_SENSITIVITY]))
-    if CONF_DURATION in config:
-        cg.add(var.set_duration(config[CONF_DURATION]))
-    if CONF_DOUBLE_TAP_WINDOW in config:
-        cg.add(
-            var.set_double_tap_window(config[CONF_DOUBLE_TAP_WINDOW].total_milliseconds)
-        )
+    cg.add(var.set_sensitivity(config[CONF_SENSITIVITY]))
+    cg.add(var.set_duration(config[CONF_DURATION]))
+    cg.add(var.set_double_tap_window(config[CONF_DOUBLE_TAP_WINDOW].total_milliseconds))
 
-    # Setup triggers
+    # Setup triggers for single and double taps
     await setup_direction_triggers(
         config,
         CONF_ON_SINGLE_TAP,
         var.get_single_tap_trigger,
+        var,
     )
     await setup_direction_triggers(
         config,
         CONF_ON_DOUBLE_TAP,
         var.get_double_tap_trigger,
+        var,
     )
