@@ -25,31 +25,16 @@ class MPU6050TapSensor : public binary_sensor::BinarySensor, public Component {
   void set_duration(uint8_t duration) { this->tap_duration_ = duration; }
   void set_double_tap_window(uint32_t window_ms) { this->double_tap_window_ms_ = window_ms; }
 
-  void add_on_single_tap_up_callback(std::function<void()> callback) {
-    this->single_tap_up_callback_.add(std::move(callback));
-  }
-  void add_on_single_tap_down_callback(std::function<void()> callback) {
-    this->single_tap_down_callback_.add(std::move(callback));
-  }
-  void add_on_single_tap_left_callback(std::function<void()> callback) {
-    this->single_tap_left_callback_.add(std::move(callback));
-  }
-  void add_on_single_tap_right_callback(std::function<void()> callback) {
-    this->single_tap_right_callback_.add(std::move(callback));
-  }
+  // Trigger getters
+  Trigger<> *get_single_tap_up_trigger() { return &this->single_tap_up_trigger_; }
+  Trigger<> *get_single_tap_down_trigger() { return &this->single_tap_down_trigger_; }
+  Trigger<> *get_single_tap_left_trigger() { return &this->single_tap_left_trigger_; }
+  Trigger<> *get_single_tap_right_trigger() { return &this->single_tap_right_trigger_; }
 
-  void add_on_double_tap_up_callback(std::function<void()> callback) {
-    this->double_tap_up_callback_.add(std::move(callback));
-  }
-  void add_on_double_tap_down_callback(std::function<void()> callback) {
-    this->double_tap_down_callback_.add(std::move(callback));
-  }
-  void add_on_double_tap_left_callback(std::function<void()> callback) {
-    this->double_tap_left_callback_.add(std::move(callback));
-  }
-  void add_on_double_tap_right_callback(std::function<void()> callback) {
-    this->double_tap_right_callback_.add(std::move(callback));
-  }
+  Trigger<> *get_double_tap_up_trigger() { return &this->double_tap_up_trigger_; }
+  Trigger<> *get_double_tap_down_trigger() { return &this->double_tap_down_trigger_; }
+  Trigger<> *get_double_tap_left_trigger() { return &this->double_tap_left_trigger_; }
+  Trigger<> *get_double_tap_right_trigger() { return &this->double_tap_right_trigger_; }
 
   void setup() override;
   void loop() override;
@@ -57,7 +42,7 @@ class MPU6050TapSensor : public binary_sensor::BinarySensor, public Component {
   void on_tap_detected_();  // Called by ISR
 
  protected:
-  static const size_t TAP_QUEUE_SIZE = 4;  // Size of circular buffer for tap events
+  static const size_t TAP_QUEUE_SIZE = 4;
 
   void write_register(uint8_t reg, uint8_t value);
   uint8_t read_register(uint8_t reg);
@@ -71,7 +56,6 @@ class MPU6050TapSensor : public binary_sensor::BinarySensor, public Component {
   uint8_t tap_duration_;
   uint32_t double_tap_window_ms_;
 
-  // ISR-safe circular buffer for tap events
   volatile uint8_t tap_queue_head_{0};
   volatile uint8_t tap_queue_tail_{0};
   TapEvent tap_queue_[TAP_QUEUE_SIZE];
@@ -79,15 +63,16 @@ class MPU6050TapSensor : public binary_sensor::BinarySensor, public Component {
   TapEvent last_tap_;
   bool waiting_for_double_tap_{false};
 
-  CallbackManager<void()> single_tap_up_callback_{};
-  CallbackManager<void()> single_tap_down_callback_{};
-  CallbackManager<void()> single_tap_left_callback_{};
-  CallbackManager<void()> single_tap_right_callback_{};
+  // Replace CallbackManager with Triggers
+  Trigger<> single_tap_up_trigger_{};
+  Trigger<> single_tap_down_trigger_{};
+  Trigger<> single_tap_left_trigger_{};
+  Trigger<> single_tap_right_trigger_{};
 
-  CallbackManager<void()> double_tap_up_callback_{};
-  CallbackManager<void()> double_tap_down_callback_{};
-  CallbackManager<void()> double_tap_left_callback_{};
-  CallbackManager<void()> double_tap_right_callback_{};
+  Trigger<> double_tap_up_trigger_{};
+  Trigger<> double_tap_down_trigger_{};
+  Trigger<> double_tap_left_trigger_{};
+  Trigger<> double_tap_right_trigger_{};
 };
 
 }  // namespace mpu6050_tap

@@ -128,16 +128,16 @@ void MPU6050TapSensor::execute_callbacks_(bool is_double_tap, TapDirection dir) 
 
     switch (dir) {
       case TAP_UP:
-        this->double_tap_up_callback_.call();
+        this->double_tap_up_trigger_.trigger();
         break;
       case TAP_DOWN:
-        this->double_tap_down_callback_.call();
+        this->double_tap_down_trigger_.trigger();
         break;
       case TAP_LEFT:
-        this->double_tap_left_callback_.call();
+        this->double_tap_left_trigger_.trigger();
         break;
       case TAP_RIGHT:
-        this->double_tap_right_callback_.call();
+        this->double_tap_right_trigger_.trigger();
         break;
       default:
         break;
@@ -152,16 +152,16 @@ void MPU6050TapSensor::execute_callbacks_(bool is_double_tap, TapDirection dir) 
 
     switch (dir) {
       case TAP_UP:
-        this->single_tap_up_callback_.call();
+        this->single_tap_up_trigger_.trigger();
         break;
       case TAP_DOWN:
-        this->single_tap_down_callback_.call();
+        this->single_tap_down_trigger_.trigger();
         break;
       case TAP_LEFT:
-        this->single_tap_left_callback_.call();
+        this->single_tap_left_trigger_.trigger();
         break;
       case TAP_RIGHT:
-        this->single_tap_right_callback_.call();
+        this->single_tap_right_trigger_.trigger();
         break;
       default:
         break;
