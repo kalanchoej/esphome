@@ -28,20 +28,16 @@ class MPU6050TapSensor : public binary_sensor::BinarySensor, public Component {
   void set_duration(uint8_t duration) { this->duration_ = duration; }
 
   // Callback registration methods for single taps
-  void register_single_tap_up_callback(Trigger<> *callback) { this->single_tap_up_trigger_.add_callback(callback); }
-  void register_single_tap_down_callback(Trigger<> *callback) { this->single_tap_down_trigger_.add_callback(callback); }
-  void register_single_tap_left_callback(Trigger<> *callback) { this->single_tap_left_trigger_.add_callback(callback); }
-  void register_single_tap_right_callback(Trigger<> *callback) {
-    this->single_tap_right_trigger_.add_callback(callback);
-  }
+  void register_single_tap_up_callback(Trigger<> *callback) { this->single_tap_up_trigger_.trigger(); }
+  void register_single_tap_down_callback(Trigger<> *callback) { this->single_tap_down_trigger_.trigger(); }
+  void register_single_tap_left_callback(Trigger<> *callback) { this->single_tap_left_trigger_.trigger(); }
+  void register_single_tap_right_callback(Trigger<> *callback) { this->single_tap_right_trigger_.trigger(); }
 
   // Callback registration methods for double taps
-  void register_double_tap_up_callback(Trigger<> *callback) { this->double_tap_up_trigger_.add_callback(callback); }
-  void register_double_tap_down_callback(Trigger<> *callback) { this->double_tap_down_trigger_.add_callback(callback); }
-  void register_double_tap_left_callback(Trigger<> *callback) { this->double_tap_left_trigger_.add_callback(callback); }
-  void register_double_tap_right_callback(Trigger<> *callback) {
-    this->double_tap_right_trigger_.add_callback(callback);
-  }
+  void register_double_tap_up_callback(Trigger<> *callback) { this->double_tap_up_trigger_.trigger(); }
+  void register_double_tap_down_callback(Trigger<> *callback) { this->double_tap_down_trigger_.trigger(); }
+  void register_double_tap_left_callback(Trigger<> *callback) { this->double_tap_left_trigger_.trigger(); }
+  void register_double_tap_right_callback(Trigger<> *callback) { this->double_tap_right_trigger_.trigger(); }
 
   // Overridden methods from Component
   void setup() override;
