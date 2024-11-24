@@ -169,39 +169,51 @@ TapDirection MPU6050TapSensor::detect_tap_direction_(const int16_t accel_x, cons
 
 void MPU6050TapSensor::execute_callbacks_(bool is_double_tap, TapDirection dir) {
   if (is_double_tap) {
-    ESP_LOGD(TAG, "Double tap detected: %d", dir);
-
     switch (dir) {
       case TAP_UP:
-        this->double_tap_up_trigger_.trigger();
+        if (this->double_tap_up_trigger_ != nullptr) {
+          this->double_tap_up_trigger_->trigger();
+        }
         break;
       case TAP_DOWN:
-        this->double_tap_down_trigger_.trigger();
+        if (this->double_tap_down_trigger_ != nullptr) {
+          this->double_tap_down_trigger_->trigger();
+        }
         break;
       case TAP_LEFT:
-        this->double_tap_left_trigger_.trigger();
+        if (this->double_tap_left_trigger_ != nullptr) {
+          this->double_tap_left_trigger_->trigger();
+        }
         break;
       case TAP_RIGHT:
-        this->double_tap_right_trigger_.trigger();
+        if (this->double_tap_right_trigger_ != nullptr) {
+          this->double_tap_right_trigger_->trigger();
+        }
         break;
       default:
         break;
     }
   } else {
-    ESP_LOGD(TAG, "Single tap detected: %d", dir);
-
     switch (dir) {
       case TAP_UP:
-        this->single_tap_up_trigger_.trigger();
+        if (this->single_tap_up_trigger_ != nullptr) {
+          this->single_tap_up_trigger_->trigger();
+        }
         break;
       case TAP_DOWN:
-        this->single_tap_down_trigger_.trigger();
+        if (this->single_tap_down_trigger_ != nullptr) {
+          this->single_tap_down_trigger_->trigger();
+        }
         break;
       case TAP_LEFT:
-        this->single_tap_left_trigger_.trigger();
+        if (this->single_tap_left_trigger_ != nullptr) {
+          this->single_tap_left_trigger_->trigger();
+        }
         break;
       case TAP_RIGHT:
-        this->single_tap_right_trigger_.trigger();
+        if (this->single_tap_right_trigger_ != nullptr) {
+          this->single_tap_right_trigger_->trigger();
+        }
         break;
       default:
         break;
