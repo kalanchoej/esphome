@@ -66,39 +66,47 @@ async def to_code(config):
         single_tap = config[CONF_ON_SINGLE_TAP]
 
         if "up" in single_tap:
-            await automation.build_automation(
-                var.register_single_tap_up_callback, [], single_tap["up"]
-            )
+            for action in single_tap["up"]:
+                await automation.build_automation(
+                    var.register_single_tap_up_callback, [], action
+                )
         if "down" in single_tap:
-            await automation.build_automation(
-                var.register_single_tap_down_callback, [], single_tap["down"]
-            )
+            for action in single_tap["down"]:
+                await automation.build_automation(
+                    var.register_single_tap_down_callback, [], action
+                )
         if "left" in single_tap:
-            await automation.build_automation(
-                var.register_single_tap_left_callback, [], single_tap["left"]
-            )
+            for action in single_tap["left"]:
+                await automation.build_automation(
+                    var.register_single_tap_left_callback, [], action
+                )
         if "right" in single_tap:
-            await automation.build_automation(
-                var.register_single_tap_right_callback, [], single_tap["right"]
-            )
+            for action in single_tap["right"]:
+                await automation.build_automation(
+                    var.register_single_tap_right_callback, [], action
+                )
 
     # Handle on_double_tap actions explicitly
     if CONF_ON_DOUBLE_TAP in config:
         double_tap = config[CONF_ON_DOUBLE_TAP]
 
         if "up" in double_tap:
-            await automation.build_automation(
-                var.register_double_tap_up_callback, [], double_tap["up"]
-            )
+            for action in double_tap["up"]:
+                await automation.build_automation(
+                    var.register_double_tap_up_callback, [], action
+                )
         if "down" in double_tap:
-            await automation.build_automation(
-                var.register_double_tap_down_callback, [], double_tap["down"]
-            )
+            for action in double_tap["down"]:
+                await automation.build_automation(
+                    var.register_double_tap_down_callback, [], action
+                )
         if "left" in double_tap:
-            await automation.build_automation(
-                var.register_double_tap_left_callback, [], double_tap["left"]
-            )
+            for action in double_tap["left"]:
+                await automation.build_automation(
+                    var.register_double_tap_left_callback, [], action
+                )
         if "right" in double_tap:
-            await automation.build_automation(
-                var.register_double_tap_right_callback, [], double_tap["right"]
-            )
+            for action in double_tap["right"]:
+                await automation.build_automation(
+                    var.register_double_tap_right_callback, [], action
+                )
