@@ -12,6 +12,7 @@ MPU6050TapSensor = mpu6050_ns.class_(
 
 CONF_SENSITIVITY = "sensitivity"
 CONF_DURATION = "duration"
+CONF_DOUBLE_TAP_DELAY = "double_tap_delay"
 
 CONFIG_SCHEMA = (
     binary_sensor.BINARY_SENSOR_SCHEMA.extend(
@@ -24,6 +25,7 @@ CONFIG_SCHEMA = (
             cv.Optional(CONF_DURATION, default=0x01): cv.hex_int_range(
                 min=0x00, max=0xFF
             ),
+            cv.Optional(CONF_DOUBLE_TAP_DELAY, default=200): cv.positive_int,
         }
     )
     .extend(cv.COMPONENT_SCHEMA)
@@ -39,3 +41,4 @@ async def to_code(config):
     cg.add(var.set_interrupt_pin(config[CONF_INTERRUPT_PIN]))
     cg.add(var.set_sensitivity(config[CONF_SENSITIVITY]))
     cg.add(var.set_duration(config[CONF_DURATION]))
+    cg.add(var.set_double_tap_delay(config[CONF_DOUBLE_TAP_DELAY]))

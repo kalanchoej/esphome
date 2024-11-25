@@ -18,25 +18,14 @@ void IRAM_ATTR static_isr_handler() {
 void MPU6050TapSensor::setup() {
   ESP_LOGCONFIG(TAG, "Setting up MPU6050 Tap Sensor...");
 
-  // Ensure only one instance is set for the static interrupt handler
   instance_ = this;
 
-  // Wake up the MPU6050
-  this->write_register(0x6B, 0x00);  // Power Management 1: clear sleep mode
+  this->write_register(0x6B, 0x00);                // Power Management 1: clear sleep mode
+  this->write_register(0x1C, 0x00);                // Set accelerometer sensitivity to ±2g
+  this->write_register(0x1F, this->sensitivity_);  // Motion threshold
+  this->write_register(0x20, this->duration_);     // Motion duration
+  this->write_register(0x38, 0x40);                // Enable motion interrupt
 
-  // Set accelerometer sensitivity to ±2g
-  this->write_register(0x1C, 0x00);
-
-  // Configure motion threshold (sensitivity)
-  this->write_register(0x1F, this->sensitivity_);
-
-  // Configure motion duration
-  this->write_register(0x20, this->duration_);
-
-  // Enable motion interrupt
-  this->write_register(0x38, 0x40);
-
-  // Configure interrupt pin
   pinMode(this->interrupt_pin_, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(this->interrupt_pin_), static_isr_handler, FALLING);
 
@@ -45,17 +34,22 @@ void MPU6050TapSensor::setup() {
   ESP_LOGCONFIG(TAG, "  Duration: 0x%02X", this->duration_);
 }
 
-void MPU6050TapSensor::on_tap_detected_() {
-  // ISR-safe operation: set flag
-  this->tap_detected_ = true;
-}
+void MPU6050TapSensor::on_tap_detected_() { this->tap_detected_ = true; }
 
 void MPU6050TapSensor::loop() {
   if (this->tap_detected_) {
-    this->tap_detected_ = false;  // Clear the flag
-    ESP_LOGD(TAG, "Tap detected!");
-    this->publish_state(true);
-    this->set_timeout(10, [this]() { this->publish_state(false); });  // Simple debounce
+    this->tap_detected_ = false;
+    uint32_t current_time = millis();
+
+    if (current_time - this->last_tap_time_ <= this->double_tap_delay_) {
+      ESP_LOGD(TAG, "Double Tap detected!");
+      this->publish_state(true);
+      this->set_timeout(10, [this]() { this->publish_state(false); });
+    } else {
+      ESP_LOGD(TAG, "Single Tap detected!");
+    }
+
+    this->last_tap_time_ = current_time;
   }
 }
 
