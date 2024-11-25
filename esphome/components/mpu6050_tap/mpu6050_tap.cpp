@@ -55,7 +55,7 @@ void MPU6050TapSensor::loop() {
     this->tap_detected_ = false;  // Clear the flag
     ESP_LOGD(TAG, "Tap detected!");
     this->publish_state(true);
-    this->set_timeout(10, [this]() { this->publish_state(false); });  // Simple debounce
+    this->set_timeout(100, [this]() { this->publish_state(false); });  // Simple debounce
   }
 }
 
