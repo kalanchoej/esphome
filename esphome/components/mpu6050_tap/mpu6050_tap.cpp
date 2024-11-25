@@ -37,212 +37,136 @@ void MPU6050TapSensor::setup() {
 }
 
 void MPU6050TapSensor::configure_mpu6050_() {
-  // Wake up the MPU6050 by clearing the SLEEP bit (0x6B register)
-  this->write_register(0x6B, 0x00);
-  delay(100);  // Wait for MPU6050 to wake up
+  this->write_register(0x6B, 0x00);                // Wake up MPU6050
+  this->write_register(0x1C, 0x00);                // ±2g range
+  this->write_register(0x1D, 0x02);                // DLPF at 92 Hz
+  this->write_register(0x1F, this->sensitivity_);  // Motion threshold
+  this->write_register(0x20, this->duration_);     // Motion duration
+  this->write_register(0x38, 0x40);                // Enable motion interrupt
+  this->write_register(0x37, 0x02);                // Interrupt pin configuration
 
-  // Set accelerometer range to ±2g (0x1C register)
-  this->write_register(0x1C, 0x00);
-  delay(10);
-
-  // Configure ACCEL_CONFIG2 for low power and DLPF (0x1D register)
-  // Example: DLPF_CFG = 2 (92 Hz)
-  this->write_register(0x1D, 0x02);
-  delay(10);
-
-  // Configure Motion Detection Threshold (0x1F register)
-  // Higher value = less sensitive to motion
-  this->write_register(0x1F, this->sensitivity_);
-  delay(10);
-
-  // Configure Motion Detection Duration (0x20 register)
-  // Number of consecutive samples above threshold to trigger
-  this->write_register(0x20, this->duration_);
-  delay(10);
-
-  // Enable Motion Interrupt (0x38 register)
-  this->write_register(0x38, 0x40);  // Set MOT_INT_EN bit
-  delay(10);
-
-  // Configure Interrupt Pin (0x37 register)
-  this->write_register(0x37, 0x02);  // Set INT_PIN_CFG to active low, open-drain
-  delay(10);
-
-  ESP_LOGD(TAG, "MPU6050 configured for motion detection.");
+  uint8_t who_am_i = this->read_register(0x75);
+  if (who_am_i == 0x68) {
+    ESP_LOGI(TAG, "WHO_AM_I check passed: MPU6050 detected.");
+  } else {
+    ESP_LOGW(TAG, "WHO_AM_I check failed: Expected 0x68, got 0x%02X.", who_am_i);
+  }
 }
 
-void MPU6050TapSensor::on_tap_detected_() {
-  // ISR-safe operation: set flag
-  this->tap_detected_ = true;
-}
+void MPU6050TapSensor::on_tap_detected_() { this->tap_detected_ = true; }
 
 void MPU6050TapSensor::loop() {
-  if (this->tap_detected_) {
-    this->tap_detected_ = false;  // Clear the flag
-    ESP_LOGD(TAG, "Tap interrupt detected!");
+  if (!this->tap_detected_)
+    return;
 
-    // Read INT_STATUS register to confirm interrupt source
-    uint8_t int_status = this->read_register(0x3A);
-    ESP_LOGD(TAG, "Interrupt Status: 0x%02X", int_status);
+  this->tap_detected_ = false;
+  uint8_t int_status = this->read_register(0x3A);
 
-    if (int_status & 0x40) {  // Check if MOT_INT bit is set
-      // Read acceleration data
-      int16_t accel_x, accel_y, accel_z;
-      Wire.beginTransmission(0x68);
-      Wire.write(0x3B);  // Start with ACCEL_XOUT_H
-      Wire.endTransmission(false);
-      Wire.requestFrom(0x68, 6);
+  if (!(int_status & 0x40)) {
+    ESP_LOGD(TAG, "Interrupt was not motion-related.");
+    return;
+  }
 
-      if (Wire.available() == 6) {
-        accel_x = (Wire.read() << 8) | Wire.read();
-        accel_y = (Wire.read() << 8) | Wire.read();
-        accel_z = (Wire.read() << 8) | Wire.read();
-        ESP_LOGD(TAG, "Acceleration Data - X: %d, Y: %d, Z: %d", accel_x, accel_y, accel_z);
+  int16_t accel_x, accel_y, accel_z;
+  Wire.beginTransmission(0x68);
+  Wire.write(0x3B);  // Start with ACCEL_XOUT_H
+  Wire.endTransmission(false);
+  Wire.requestFrom(0x68, 6);
 
-        // Detect tap direction based on acceleration data
-        TapDirection dir = detect_tap_direction_(accel_x, accel_y, accel_z);
+  if (Wire.available() < 6) {
+    ESP_LOGW(TAG, "Failed to read acceleration data.");
+    return;
+  }
 
-        if (dir != TAP_UNKNOWN) {
-          uint32_t current_time = millis();
+  accel_x = (Wire.read() << 8) | Wire.read();
+  accel_y = (Wire.read() << 8) | Wire.read();
+  accel_z = (Wire.read() << 8) | Wire.read();
 
-          if (awaiting_double_tap_) {
-            uint32_t time_since_last_tap = current_time - last_tap_time_;
-            if (time_since_last_tap <= 200) {  // Double tap window: 200 ms
-              ESP_LOGD(TAG, "Double tap detected: %d", dir);
-              execute_callbacks_(true, dir);  // true indicates double tap
-              awaiting_double_tap_ = false;
-            } else {
-              // Previous tap is a single tap
-              ESP_LOGD(TAG, "Single tap detected: %d", last_tap_direction_);
-              execute_callbacks_(false, last_tap_direction_);
-              // Register current tap as the first tap
-              last_tap_time_ = current_time;
-              last_tap_direction_ = dir;
-              awaiting_double_tap_ = true;
-            }
-          } else {
-            // First tap detected, start double tap window
-            last_tap_time_ = millis();
-            last_tap_direction_ = dir;
-            awaiting_double_tap_ = true;
+  TapDirection dir = detect_tap_direction_(accel_x, accel_y, accel_z);
+  if (dir == TAP_UNKNOWN) {
+    ESP_LOGD(TAG, "Tap direction unknown.");
+    return;
+  }
 
-            // Schedule a timeout to treat as single tap if no second tap occurs
-            this->set_timeout(200, [this, dir]() {
-              if (this->awaiting_double_tap_) {
-                ESP_LOGD(TAG, "Single tap detected after timeout: %d", dir);
-                this->execute_callbacks_(false, dir);
-                this->awaiting_double_tap_ = false;
-              }
-            });
-          }
-        } else {
-          ESP_LOGD(TAG, "Tap direction unknown.");
-        }
-      } else {
-        ESP_LOGW(TAG, "Failed to read acceleration data.");
-      }
+  uint32_t now = millis();
+  if (awaiting_double_tap_) {
+    if (now - last_tap_time_ <= 200) {
+      ESP_LOGD(TAG, "Double tap detected: %s", tap_direction_to_string(dir));
+      execute_callbacks_(true, dir);
+      awaiting_double_tap_ = false;
     } else {
-      ESP_LOGD(TAG, "Interrupt not from motion detection.");
+      ESP_LOGD(TAG, "Single tap detected: %s", tap_direction_to_string(last_tap_direction_));
+      execute_callbacks_(false, last_tap_direction_);
+      register_tap_as_first(now, dir);
     }
+  } else {
+    register_tap_as_first(now, dir);
+    this->set_timeout(200, [this, dir]() { handle_single_tap_timeout(dir); });
   }
 }
 
 TapDirection MPU6050TapSensor::detect_tap_direction_(const int16_t accel_x, const int16_t accel_y,
                                                      const int16_t accel_z) {
-  // Simple algorithm to determine tap direction based on dominant acceleration axis
   int16_t abs_x = abs(accel_x);
   int16_t abs_y = abs(accel_y);
   int16_t abs_z = abs(accel_z);
 
-  if (abs_z > abs_x && abs_z > abs_y) {
+  if (abs_z > abs_x && abs_z > abs_y)
     return (accel_z > 0) ? TAP_UP : TAP_DOWN;
-  } else if (abs_x > abs_y) {
+  if (abs_x > abs_y)
     return (accel_x > 0) ? TAP_RIGHT : TAP_LEFT;
-  } else if (abs_y > abs_x) {
-    // Depending on device orientation, define Y-axis taps
-    // For this example, we'll treat Y-axis as TAP_UNKNOWN
-    return TAP_UNKNOWN;
-  }
-
   return TAP_UNKNOWN;
 }
 
-void MPU6050TapSensor::execute_callbacks_(bool is_double_tap, TapDirection dir) {
-  if (is_double_tap) {
-    switch (dir) {
-      case TAP_UP:
-        if (this->double_tap_up_trigger_ != nullptr) {
-          this->double_tap_up_trigger_->trigger();
-        }
-        break;
-      case TAP_DOWN:
-        if (this->double_tap_down_trigger_ != nullptr) {
-          this->double_tap_down_trigger_->trigger();
-        }
-        break;
-      case TAP_LEFT:
-        if (this->double_tap_left_trigger_ != nullptr) {
-          this->double_tap_left_trigger_->trigger();
-        }
-        break;
-      case TAP_RIGHT:
-        if (this->double_tap_right_trigger_ != nullptr) {
-          this->double_tap_right_trigger_->trigger();
-        }
-        break;
-      default:
-        break;
-    }
-  } else {
-    switch (dir) {
-      case TAP_UP:
-        if (this->single_tap_up_trigger_ != nullptr) {
-          this->single_tap_up_trigger_->trigger();
-        }
-        break;
-      case TAP_DOWN:
-        if (this->single_tap_down_trigger_ != nullptr) {
-          this->single_tap_down_trigger_->trigger();
-        }
-        break;
-      case TAP_LEFT:
-        if (this->single_tap_left_trigger_ != nullptr) {
-          this->single_tap_left_trigger_->trigger();
-        }
-        break;
-      case TAP_RIGHT:
-        if (this->single_tap_right_trigger_ != nullptr) {
-          this->single_tap_right_trigger_->trigger();
-        }
-        break;
-      default:
-        break;
-    }
+const char *MPU6050TapSensor::tap_direction_to_string(TapDirection dir) {
+  switch (dir) {
+    case TAP_UP:
+      return "Up";
+    case TAP_DOWN:
+      return "Down";
+    case TAP_LEFT:
+      return "Left";
+    case TAP_RIGHT:
+      return "Right";
+    default:
+      return "Unknown";
   }
 }
 
-DirectionTrigger *MPU6050TapSensor::get_single_tap_trigger(const std::string &direction) {
-  if (direction == "up")
-    return &single_tap_triggers_[TAP_UP];
-  if (direction == "down")
-    return &single_tap_triggers_[TAP_DOWN];
-  if (direction == "left")
-    return &single_tap_triggers_[TAP_LEFT];
-  if (direction == "right")
-    return &single_tap_triggers_[TAP_RIGHT];
+void MPU6050TapSensor::register_tap_as_first(uint32_t now, TapDirection dir) {
+  last_tap_time_ = now;
+  last_tap_direction_ = dir;
+  awaiting_double_tap_ = true;
+  ESP_LOGD(TAG, "First tap registered: %s", tap_direction_to_string(dir));
+}
+
+void MPU6050TapSensor::handle_single_tap_timeout(TapDirection dir) {
+  if (awaiting_double_tap_) {
+    ESP_LOGD(TAG, "Single tap detected after timeout: %s", tap_direction_to_string(dir));
+    execute_callbacks_(false, dir);
+    awaiting_double_tap_ = false;
+  }
+}
+
+DirectionTrigger *MPU6050TapSensor::get_single_tap_trigger(TapDirection dir) {
+  if (dir >= TAP_UP && dir <= TAP_RIGHT) {
+    return &single_tap_triggers_[dir];
+  }
   return nullptr;
 }
 
-DirectionTrigger *MPU6050TapSensor::get_double_tap_trigger(const std::string &direction) {
-  if (direction == "up")
-    return &double_tap_triggers_[TAP_UP];
-  if (direction == "down")
-    return &double_tap_triggers_[TAP_DOWN];
-  if (direction == "left")
-    return &double_tap_triggers_[TAP_LEFT];
-  if (direction == "right")
-    return &double_tap_triggers_[TAP_RIGHT];
+DirectionTrigger *MPU6050TapSensor::get_double_tap_trigger(TapDirection dir) {
+  if (dir >= TAP_UP && dir <= TAP_RIGHT) {
+    return &double_tap_triggers_[dir];
+  }
   return nullptr;
+}
+
+void MPU6050TapSensor::execute_callbacks_(bool is_double_tap, TapDirection dir) {
+  DirectionTrigger *trigger = is_double_tap ? &double_tap_triggers_[dir] : &single_tap_triggers_[dir];
+  if (trigger != nullptr) {
+    trigger->trigger();
+  }
 }
 
 void MPU6050TapSensor::write_register(uint8_t reg, uint8_t value) {
@@ -250,7 +174,6 @@ void MPU6050TapSensor::write_register(uint8_t reg, uint8_t value) {
   Wire.write(reg);
   Wire.write(value);
   Wire.endTransmission();
-  ESP_LOGD(TAG, "Wrote 0x%02X to register 0x%02X", value, reg);
 }
 
 uint8_t MPU6050TapSensor::read_register(uint8_t reg) {
@@ -258,15 +181,10 @@ uint8_t MPU6050TapSensor::read_register(uint8_t reg) {
   Wire.write(reg);
   Wire.endTransmission(false);
   Wire.requestFrom(0x68, 1);
-  uint8_t value = Wire.available() ? Wire.read() : 0;
-  ESP_LOGD(TAG, "Read 0x%02X from register 0x%02X", value, reg);
-  return value;
+  return Wire.available() ? Wire.read() : 0;
 }
 
-void MPU6050TapSensor::dump_config() {
-  ESP_LOGCONFIG(TAG, "MPU6050 Tap Sensor:");
-  LOG_BINARY_SENSOR(TAG, "Tap Detected", this);
-}
+void MPU6050TapSensor::dump_config() { ESP_LOGCONFIG(TAG, "MPU6050 Tap Sensor:"); }
 
 }  // namespace mpu6050_tap
 }  // namespace esphome
