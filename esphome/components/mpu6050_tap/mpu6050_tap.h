@@ -12,6 +12,7 @@ class MPU6050TapSensor : public binary_sensor::BinarySensor, public Component {
   void set_interrupt_pin(int pin) { this->interrupt_pin_ = pin; }
   void set_sensitivity(uint8_t sensitivity) { this->sensitivity_ = sensitivity; }
   void set_duration(uint8_t duration) { this->duration_ = duration; }
+  void set_double_tap_delay(uint16_t delay) { this->double_tap_delay_ = delay; }  // New setter
 
   void setup() override;
   void loop() override;
@@ -24,7 +25,10 @@ class MPU6050TapSensor : public binary_sensor::BinarySensor, public Component {
   int interrupt_pin_;
   uint8_t sensitivity_;
   uint8_t duration_;
+  uint16_t double_tap_delay_;           // Configurable double-tap delay in milliseconds
+  uint32_t last_tap_time_ = 0;          // Time of the last detected tap
   volatile bool tap_detected_ = false;  // Flag for ISR to main loop communication
+  bool double_tap_in_progress = false;  // Tracks if a double-tap sequence is active
 };
 
 }  // namespace mpu6050_tap

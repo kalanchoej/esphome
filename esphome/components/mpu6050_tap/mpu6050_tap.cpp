@@ -53,9 +53,31 @@ void MPU6050TapSensor::on_tap_detected_() {
 void MPU6050TapSensor::loop() {
   if (this->tap_detected_) {
     this->tap_detected_ = false;  // Clear the flag
-    ESP_LOGD(TAG, "Tap detected!");
-    this->publish_state(true);
-    this->set_timeout(100, [this]() { this->publish_state(false); });  // Simple debounce
+    uint32_t current_time = millis();
+
+    if (current_time - this->last_tap_time_ <= this->double_tap_delay_) {
+      ESP_LOGD(TAG, "Double Tap detected!");
+      this->publish_state(true);  // Notify ESPHome of double tap
+      this->double_tap_in_progress = true;
+
+      // Extend the debounce duration for double taps
+      this->set_timeout(300, [this]() {
+        this->publish_state(false);            // Clear the state after the delay
+        this->double_tap_in_progress = false;  // Reset double-tap state
+      });
+    } else {
+      ESP_LOGD(TAG, "Single Tap detected!");
+      this->publish_state(true);  // Notify ESPHome of single tap
+
+      // Standard debounce for single taps
+      this->set_timeout(100, [this]() {
+        if (!this->double_tap_in_progress) {
+          this->publish_state(false);  // Clear the state only if not part of a double tap
+        }
+      });
+    }
+
+    this->last_tap_time_ = current_time;
   }
 }
 
